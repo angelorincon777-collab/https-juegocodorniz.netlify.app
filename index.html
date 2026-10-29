@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Codorvilla - El Salto de la Codorniz</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        vinotinto: {
+                            DEFAULT: '#6B1D2F',
+                            dark: '#4A121F',
+                            light: '#8C2B42',
+                            accent: '#D97736'
+                        },
+                        granja: {
+                            warm: '#FFF8F0',
+                            green: '#4A7C59',
+                            yellow: '#F4A261',
+                            cream: '#F7ECE1'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow: hidden;
+            background-color: #4A7C59;
+        }
+        canvas {
+            display: block;
+            touch-action: none;
+        }
+        /* Pulse animation for UI elements */
+        @keyframes pulse-subtle {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .animate-pulse-subtle {
+            animation: pulse-subtle 2s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 h-screen w-screen flex flex-col justify-center items-center p-0 m-0 relative">
+
+    <!-- Game Container Wrapper -->
+    <div id="game-container" class="relative w-full h-full max-w-md max-h-[900px] bg-gradient-to-b from-sky-300 via-sky-200 to-amber-100 flex flex-col justify-between shadow-2xl overflow-hidden rounded-none sm:rounded-3xl border-0 sm:border-4 border-vinotinto">
+
+        <!-- Top Navigation / Score Header -->
+        <header class="absolute top-0 left-0 right-0 z-10 p-4 flex justify-between items-center bg-gradient-to-b from-black/40 to-transparent">
+            <!-- Brand Badge -->
+            <div class="flex items-center space-x-2 bg-vinotinto text-white px-3 py-1.5 rounded-full shadow-lg border border-amber-300/30">
+                <svg class="w-5 h-5 text-amber-300" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+                    <circle cx="12" cy="12" r="5"/>
+                </svg>
+                <span class="font-extrabold tracking-wider text-xs sm:text-sm uppercase">CODORVILLA</span>
+            </div>
+
+            <!-- Egg Counter -->
+            <div class="bg-white/95 backdrop-blur-sm px-4 py-1.5 rounded-full shadow-md flex items-center space-x-2 border-2 border-vinotinto">
+                <!-- Egg Icon -->
+                <div class="w-5 h-6 bg-amber-100 rounded-[50%_50%_50%_50%/_60%_60%_40%_40%] border border-amber-400 relative overflow-hidden flex items-center justify-center shadow-inner">
+                    <div class="w-1 h-1 bg-amber-600 rounded-full absolute top-2 left-1 opacity-60"></div>
+                    <div class="w-1 h-1 bg-amber-600 rounded-full absolute top-3 right-1 opacity-60"></div>
+                </div>
+                <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Huevos:</span>
+                <span id="score-counter" class="text-lg font-black text-vinotinto">0 / 5</span>
+            </div>
+        </header>
+
+        <!-- Canvas Area -->
+        <canvas id="gameCanvas" class="w-full h-full"></canvas>
+
+        <!-- Start Overlay -->
+        <div id="start-screen" class="absolute inset-0 bg-vinotinto-dark/80 backdrop-blur-md z-20 flex flex-col justify-center items-center p-6 text-center text-white">
+            <div class="w-24 h-24 bg-granja-cream rounded-full border-4 border-amber-400 flex items-center justify-center mb-4 shadow-xl animate-pulse-subtle">
+                <!-- SVG Quail Avatar -->
+                <svg class="w-16 h-16" viewBox="0 0 100 100">
+                    <!-- Body -->
+                    <path d="M 20 65 Q 15 35 45 35 Q 75 35 80 65 Q 85 85 50 85 Q 15 85 20 65 Z" fill="#8C6239" />
+                    <!-- Belly -->
+                    <path d="M 30 65 Q 35 45 50 45 Q 65 45 70 65 Q 70 80 50 80 Q 30 80 30 65 Z" fill="#D9A05B" />
+                    <!-- Spots -->
+                    <circle cx="42" cy="55" r="2" fill="#4A2E16" />
+                    <circle cx="58" cy="58" r="2.5" fill="#4A2E16" />
+                    <circle cx="50" cy="68" r="2" fill="#4A2E16" />
+                    <!-- Head Feather (Plume) -->
+                    <path d="M 60 25 Q 75 10 70 5 Q 60 10 58 23 Z" fill="#2C1D11" />
+                    <!-- Eye -->
+                    <circle cx="62" cy="38" r="4" fill="#000" />
+                    <circle cx="63.5" cy="36.5" r="1.5" fill="#FFF" />
+                    <!-- Beak -->
+                    <polygon points="70,40 82,43 70,47" fill="#E07A5F" />
+                </svg>
+            </div>
+            <h1 class="text-3xl font-black text-amber-300 mb-1 tracking-tight">CODORVILLA</h1>
+            <p class="text-lg font-bold text-amber-100 mb-4">El Salto de la Codorniz</p>
+            <p class="text-sm text-amber-50/90 max-w-xs mb-8 leading-relaxed">
+                Toca la pantalla para saltar los 5 obstáculos y recolectar los deliciosos huevos de codorniz.
+            </p>
+            <button id="start-btn" class="w-full max-w-xs py-4 bg-gradient-to-r from-amber-400 to-amber-500 text-vinotinto-dark font-extrabold text-lg rounded-2xl shadow-lg border-b-4 border-amber-600 active:translate-y-1 transition-all uppercase tracking-wider">
+                ¡Empezar A Jugar!
+            </button>
+        </div>
+
+        <!-- Touch Instruction Banner (Fades out when playing) -->
+        <div id="tap-hint" class="absolute bottom-8 left-0 right-0 text-center pointer-events-none opacity-0 transition-opacity duration-300 z-10">
+            <span class="inline-block bg-black/60 text-white text-xs font-semibold px-4 py-2 rounded-full backdrop-blur-sm border border-white/20 animate-bounce">
+                👆 Toca la pantalla para saltar
+            </span>
+        </div>
+
+        <!-- Victory Modal Screen -->
+        <div id="victory-modal" class="absolute inset-0 bg-vinotinto-dark/95 backdrop-blur-md z-30 flex flex-col justify-between p-6 text-center text-white hidden overflow-y-auto">
+            <div class="my-auto py-4 flex flex-col items-center">
+                <!-- Trophy Badge -->
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-amber-400 text-vinotinto-dark rounded-full mb-3 shadow-lg border-2 border-amber-200">
+                    <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0011 15.9V18H8v2h8v-2h-3v-2.1c2.28-.46 4-2.48 4-4.9v-1c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/>
+                    </svg>
+                </div>
+
+                <h2 class="text-3xl font-extrabold text-amber-300 mb-1">¡Misión Cumplida!</h2>
+                <p class="text-sm font-medium text-amber-100 mb-5">Has recolectado los 5 huevos de codorniz</p>
+
+                <!-- Photo Card of Founders / Codorvilla Team -->
+                <div class="w-full max-w-sm bg-white rounded-2xl p-4 shadow-2xl text-gray-800 border-2 border-amber-300/40 relative mb-5">
+                    <div class="relative w-full h-48 bg-gradient-to-tr from-amber-100 to-orange-50 rounded-xl overflow-hidden border border-gray-200 flex flex-col items-center justify-center">
+                        <!-- Custom Image Placeholder or User Photo -->
+                        <img id="founders-photo" src="https://placehold.co/600x400/6B1D2F/FFFFFF?text=Socios+Codorvilla" alt="Socios Codorvilla" class="w-full h-full object-cover hidden">
+                        
+                        <!-- Default Illustrated Vector Placeholder for Founders -->
+                        <div id="founders-illustration" class="flex flex-col items-center justify-center p-3 text-center">
+                            <div class="flex -space-x-4 mb-2">
+                                <div class="w-16 h-16 rounded-full bg-vinotinto border-2 border-white flex items-center justify-center text-amber-300 shadow-md">
+                                    <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                                </div>
+                                <div class="w-16 h-16 rounded-full bg-vinotinto-light border-2 border-white flex items-center justify-center text-amber-300 shadow-md">
+                                    <svg class="w-10 h-10" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                                </div>
+                            </div>
+                            <span class="text-xs font-bold text-vinotinto uppercase tracking-wider">Familia & Socios Codorvilla</span>
+                            <span class="text-[10px] text-gray-500">Pasión por la calidad del campo</span>
+                        </div>
+
+                        <!-- Change Photo Button (For customization) -->
+                        <label for="upload-photo" class="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 text-white text-[10px] px-2.5 py-1 rounded-full cursor-pointer backdrop-blur-sm transition-all border border-white/30">
+                            📷 Cambiar Foto
+                        </label>
+                        <input type="file" id="upload-photo" accept="image/*" class="hidden">
+                    </div>
+
+                    <div class="mt-3 text-center">
+                        <p class="text-xs text-gray-600 italic leading-relaxed">
+                            "Gracias por elegir nuestros huevos de codorniz. Trabajamos día a día para llevar lo mejor del campo a tu mesa."
+                        </p>
+                        <p class="text-xs font-bold text-vinotinto mt-2">— El Equipo de Codorvilla —</p>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <button id="restart-btn" class="w-full max-w-xs py-3.5 bg-gradient-to-r from-amber-400 to-amber-500 text-vinotinto-dark font-extrabold text-base rounded-xl shadow-lg border-b-4 border-amber-600 active:translate-y-0.5 transition-all uppercase tracking-wider">
+                    🔄 Jugar De Nuevo
+                </button>
+            </div>
+        </div>
+
+        <!-- Game Over Modal (If hit obstacle) -->
+        <div id="gameover-modal" class="absolute inset-0 bg-black/80 backdrop-blur-md z-30 flex flex-col justify-center items-center p-6 text-center text-white hidden">
+            <div class="w-16 h-16 bg-red-500/20 text-red-400 rounded-full flex items-center justify-center mb-3 border border-red-500/40">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-1">¡Casi lo logras!</h3>
+            <p class="text-sm text-gray-300 mb-6">La codorniz tropieza con el obstáculo. Inténtalo otra vez.</p>
+            <button id="retry-btn" class="w-full max-w-xs py-3 bg-vinotinto hover:bg-vinotinto-light text-white font-bold text-base rounded-xl shadow-lg border-b-4 border-vinotinto-dark active:translate-y-0.5 transition-all">
+                Intentar de nuevo
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Game Script -->
+    <script>
+        // Game Setup & Initialization
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('game-container');
+        
+        const scoreCounter = document.getElementById('score-counter');
+        const startScreen = document.getElementById('start-screen');
+        const victoryModal = document.getElementById('victory-modal');
+        const gameoverModal = document.getElementById('gameover-modal');
+        const tapHint = document.getElementById('tap-hint');
+        
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const retryBtn = document.getElementById('retry-btn');
+        const uploadPhoto = document.getElementById('upload-photo');
+        const foundersPhoto = document.getElementById('founders-photo');
+        const foundersIllustration = document.getElementById('founders-illustration');
+
+        // Responsive Canvas Scaling
+        let width = 0;
+        let height = 0;
+
+        function resizeCanvas() {
+            width = container.clientWidth;
+            height = container.clientHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Game Variables
+        let isPlaying = false;
+        let score = 0;
+        const totalEggsTarget = 5;
+        let gameSpeed = 3.2;
+        let gravity = 0.45;
+        let frameCount = 0;
+
+        // Ground setup
+        const getGroundY = () => height - 80;
+
+        // Quail Player Object
+        const quail = {
+            x: 60,
+            y: 0,
+            radius: 20,
+            vy: 0,
+            jumpStrength: -10,
+            isGrounded: false,
+            rotation: 0,
+            
+            reset() {
+                this.x = Math.min(80, width * 0.2);
+                this.y = getGroundY() - this.radius;
+                this.vy = 0;
+                this.isGrounded = true;
+                this.rotation = 0;
+            },
+
+            jump() {
+                if (this.isGrounded) {
+                    this.vy = this.jumpStrength;
+                    this.isGrounded = false;
+                }
+            },
+
+            update() {
+                this.vy += gravity;
+                this.y += this.vy;
+
+                const groundY = getGroundY() - this.radius;
+                if (this.y >= groundY) {
+                    this.y = groundY;
+                    this.vy = 0;
+                    this.isGrounded = true;
+                }
+
+                // Tilt angle based on vertical speed
+                if (!this.isGrounded) {
+                    this.rotation = Math.min(Math.max(this.vy * 0.04, -0.4), 0.4);
+                } else {
+                    this.rotation = 0;
+                }
+            },
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+
+                // Body (Brown & Speckled)
+                ctx.fillStyle = '#8C6239';
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 22, 18, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Belly (Cream/Orange)
+                ctx.fillStyle = '#D9A05B';
+                ctx.beginPath();
+                ctx.ellipse(4, 4, 14, 10, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Spots on back
+                ctx.fillStyle = '#4A2E16';
+                ctx.beginPath();
+                ctx.arc(-8, -4, 1.8, 0, Math.PI * 2);
+                ctx.arc(-2, -6, 1.5, 0, Math.PI * 2);
+                ctx.arc(-12, 2, 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Wing
+                ctx.fillStyle = '#6E4723';
+                ctx.beginPath();
+                ctx.ellipse(-4, 0, 10, 6, 0.2, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Head Feather (Distinctive Quail Plume)
+                ctx.strokeStyle = '#2C1D11';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(10, -12);
+                ctx.quadraticCurveTo(16, -24, 20, -22);
+                ctx.stroke();
+                
+                ctx.fillStyle = '#2C1D11';
+                ctx.beginPath();
+                ctx.arc(20, -22, 3.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Beak
+                ctx.fillStyle = '#E07A5F';
+                ctx.beginPath();
+                ctx.moveTo(18, -2);
+                ctx.lineTo(27, 2);
+                ctx.lineTo(18, 5);
+                ctx.closePath();
+                ctx.fill();
+
+                // Eye
+                ctx.fillStyle = '#000000';
+                ctx.beginPath();
+                ctx.arc(12, -4, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Eye Reflection
+                ctx.fillStyle = '#FFFFFF';
+                ctx.beginPath();
+                ctx.arc(13, -5, 0.8, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Legs (if airborne/grounded animation)
+                ctx.strokeStyle = '#E07A5F';
+                ctx.lineWidth = 2;
+                if (this.isGrounded) {
+                    const legOffset = (Math.sin(frameCount * 0.3) * 3);
+                    ctx.beginPath();
+                    ctx.moveTo(-4, 16);
+                    ctx.lineTo(-4 + legOffset, 22);
+                    ctx.moveTo(6, 16);
+                    ctx.lineTo(6 - legOffset, 22);
+                    ctx.stroke();
+                } else {
+                    ctx.beginPath();
+                    ctx.moveTo(-4, 16);
+                    ctx.lineTo(-8, 20);
+                    ctx.moveTo(6, 16);
+                    ctx.lineTo(2, 20);
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+            }
+        };
+
+        // Obstacles & Eggs Manager
+        let obstacles = [];
+        let eggs = [];
+        let spawnedCount = 0;
+
+        class Obstacle {
+            constructor(x) {
+                this.x = x;
+                this.width = 36;
+                this.height = 45;
+                this.passed = false;
+                this.type = Math.floor(Math.random() * 2); // 0: Wooden fence, 1: Hay bale / Crate
+            }
+
+            update() {
+                this.x -= gameSpeed;
+            }
+
+            draw() {
+                const groundY = getGroundY();
+                if (this.type === 0) {
+                    // Wooden Fence Obstacle
+                    ctx.fillStyle = '#8B5A2B';
+                    // Fence Posts
+                    ctx.fillRect(this.x, groundY - this.height, 10, this.height);
+                    ctx.fillRect(this.x + 22, groundY - this.height, 10, this.height);
+                    // Crossbars
+                    ctx.fillRect(this.x - 2, groundY - this.height + 10, this.width + 4, 7);
+                    ctx.fillRect(this.x - 2, groundY - 18, this.width + 4, 7);
+                    // Wood Grain Detail
+                    ctx.fillStyle = '#5C3A1E';
+                    ctx.fillRect(this.x + 2, groundY - this.height + 2, 2, this.height - 4);
+                    ctx.fillRect(this.x + 24, groundY - this.height + 2, 2, this.height - 4);
+                } else {
+                    // Hay Bale Obstacle
+                    ctx.fillStyle = '#D4A373';
+                    ctx.beginPath();
+                    ctx.roundRect(this.x, groundY - 38, this.width, 38, 6);
+                    ctx.fill();
+                    // Texture
+                    ctx.fillStyle = '#CCD5AE';
+                    ctx.fillRect(this.x + 4, groundY - 30, this.width - 8, 4);
+                    ctx.fillRect(this.x + 6, groundY - 18, this.width - 12, 4);
+                    // Rope around
+                    ctx.fillStyle = '#A3B18A';
+                    ctx.fillRect(this.x + 10, groundY - 38, 4, 38);
+                    ctx.fillRect(this.x + 22, groundY - 38, 4, 38);
+                }
+            }
+        }
+
+        class QuailEgg {
+            constructor(x) {
+                this.x = x;
+                this.y = getGroundY() - 35;
+                this.width = 16;
+                this.height = 22;
+                this.collected = false;
+                this.floatOffset = Math.random() * Math.PI * 2;
+            }
+
+            update() {
+                this.x -= gameSpeed;
+                // Subtle floating motion
+                this.floatOffset += 0.05;
+            }
+
+            draw() {
+                if (this.collected) return;
+
+                const renderY = this.y + Math.sin(this.floatOffset) * 4;
+
+                ctx.save();
+                ctx.translate(this.x, renderY);
+
+                // Glow effect behind egg
+                const gradient = ctx.createRadialGradient(0, 0, 2, 0, 0, 18);
+                gradient.addColorStop(0, 'rgba(255, 230, 150, 0.8)');
+                gradient.addColorStop(1, 'rgba(255, 230, 150, 0)');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(0, 0, 18, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Egg Shape
+                ctx.fillStyle = '#F4E8C1';
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 8, 11, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#D4C391';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // Distinctive Quail Egg Speckles
+                ctx.fillStyle = '#6B4226';
+                ctx.beginPath();
+                ctx.arc(-2, -4, 1.2, 0, Math.PI * 2);
+                ctx.arc(3, -2, 1, 0, Math.PI * 2);
+                ctx.arc(-3, 3, 1.5, 0, Math.PI * 2);
+                ctx.arc(2, 4, 0.9, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        // Spawn Sequence Logic (Ensure 5 pairs of Obstacle -> Egg)
+        function spawnSequence() {
+            if (spawnedCount < totalEggsTarget) {
+                const minDistance = width * 0.75;
+                const lastObstacle = obstacles[obstacles.length - 1];
+                
+                if (!lastObstacle || (width - lastObstacle.x) >= minDistance) {
+                    const obstacleX = width + 50;
+                    obstacles.push(new Obstacle(obstacleX));
+                    
+                    // Egg placed safely after the obstacle
+                    const eggX = obstacleX + 110;
+                    eggs.push(new QuailEgg(eggX));
+                    
+                    spawnedCount++;
+                }
+            }
+        }
+
+        // Draw Scenery Background (Granja/Codorvilla Theme)
+        function drawBackground() {
+            const groundY = getGroundY();
+
+            // Sky is handled by CSS container gradient
+
+            // Distant Hills
+            ctx.fillStyle = '#8AB17D';
+            ctx.beginPath();
+            ctx.moveTo(0, groundY);
+            ctx.quadraticCurveTo(width * 0.25, groundY - 80, width * 0.5, groundY - 20);
+            ctx.quadraticCurveTo(width * 0.75, groundY - 90, width, groundY - 30);
+            ctx.lineTo(width, height);
+            ctx.lineTo(0, height);
+            ctx.fill();
+
+            // Closer Hills
+            ctx.fillStyle = '#4A7C59';
+            ctx.beginPath();
+            ctx.moveTo(0, groundY);
+            ctx.quadraticCurveTo(width * 0.3, groundY - 40, width * 0.6, groundY - 10);
+            ctx.quadraticCurveTo(width * 0.8, groundY - 50, width, groundY - 15);
+            ctx.lineTo(width, height);
+            ctx.lineTo(0, height);
+            ctx.fill();
+
+            // Ground Track
+            ctx.fillStyle = '#D4A373';
+            ctx.fillRect(0, groundY, width, height - groundY);
+
+            // Grass top edge
+            ctx.fillStyle = '#2A9D8F';
+            ctx.fillRect(0, groundY - 4, width, 6);
+
+            // Decorative Ground Pebbles / Grass Tufts
+            ctx.fillStyle = '#C28E5C';
+            for (let i = 0; i < width; i += 60) {
+                const shift = (frameCount * gameSpeed + i) % width;
+                ctx.fillRect(width - shift, groundY + 20, 8, 3);
+                ctx.fillRect(width - ((shift + 30) % width), groundY + 45, 12, 4);
+            }
+        }
+
+        // Collision Detection Helper
+        function checkCollision(rect1, rect2) {
+            return (
+                rect1.x - rect1.radius < rect2.x + rect2.width &&
+                rect1.x + rect1.radius > rect2.x &&
+                rect1.y - rect1.radius < rect2.y &&
+                rect1.y + rect1.radius > rect2.y - rect2.height
+            );
+        }
+
+        // Particle System for Collecting Eggs
+        let particles = [];
+        function createEggParticles(x, y) {
+            for (let i = 0; i < 12; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: (Math.random() - 0.5) * 6 - 2,
+                    color: Math.random() > 0.5 ? '#F4E8C1' : '#D97736',
+                    radius: Math.random() * 3 + 2,
+                    alpha: 1
+                });
+            }
+        }
+
+        function updateAndDrawParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= 0.03;
+
+                if (p.alpha <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+
+                ctx.save();
+                ctx.globalAlpha = p.alpha;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // Main Game Loop
+        function gameLoop() {
+            if (!isPlaying) return;
+
+            frameCount++;
+            ctx.clearRect(0, 0, width, height);
+
+            // Render World
+            drawBackground();
+            spawnSequence();
+
+            // Update & Render Player
+            quail.update();
+            quail.draw();
+
+            // Update & Render Obstacles
+            const groundY = getGroundY();
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obs = obstacles[i];
+                obs.update();
+                obs.draw();
+
+                // Collision with obstacle (Hit box slightly generous)
+                const obsBox = { x: obs.x + 4, y: groundY, width: obs.width - 8, height: obs.height - 4 };
+                if (checkCollision(quail, obsBox)) {
+                    triggerGameOver();
+                    return;
+                }
+
+                // Cleanup off-screen
+                if (obs.x + obs.width < -20) {
+                    obstacles.splice(i, 1);
+                }
+            }
+
+            // Update & Render Eggs
+            for (let i = eggs.length - 1; i >= 0; i--) {
+                const egg = eggs[i];
+                egg.update();
+                egg.draw();
+
+                // Collection Check
+                const distSq = (quail.x - egg.x) ** 2 + (quail.y - egg.y) ** 2;
+                if (!egg.collected && distSq < (quail.radius + 14) ** 2) {
+                    egg.collected = true;
+                    score++;
+                    scoreCounter.textContent = `${score} / ${totalEggsTarget}`;
+                    createEggParticles(egg.x, egg.y);
+
+                    // Check Victory
+                    if (score >= totalEggsTarget) {
+                        setTimeout(triggerVictory, 400);
+                    }
+                }
+
+                // Cleanup off-screen
+                if (egg.x < -20) {
+                    eggs.splice(i, 1);
+                }
+            }
+
+            // Particles
+            updateAndDrawParticles();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Control Triggers
+        function handleJump(e) {
+            if (e) e.preventDefault();
+            if (isPlaying) {
+                quail.jump();
+            }
+        }
+
+        // Event Listeners for Touch and Click
+        container.addEventListener('touchstart', handleJump, { passive: false });
+        container.addEventListener('mousedown', handleJump);
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'ArrowUp') {
+                handleJump(e);
+            }
+        });
+
+        // Game State Controllers
+        function startGame() {
+            score = 0;
+            spawnedCount = 0;
+            obstacles = [];
+            eggs = [];
+            particles = [];
+            scoreCounter.textContent = `0 / ${totalEggsTarget}`;
+
+            startScreen.classList.add('hidden');
+            victoryModal.classList.add('hidden');
+            gameoverModal.classList.add('hidden');
+            
+            tapHint.classList.remove('opacity-0');
+            setTimeout(() => tapHint.classList.add('opacity-0'), 3000);
+
+            quail.reset();
+            isPlaying = true;
+            gameLoop();
+        }
+
+        function triggerGameOver() {
+            isPlaying = false;
+            gameoverModal.classList.remove('hidden');
+        }
+
+        function triggerVictory() {
+            isPlaying = false;
+            victoryModal.classList.remove('hidden');
+        }
+
+        // Button Event Handlers
+        startBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            startGame();
+        });
+
+        restartBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            startGame();
+        });
+
+        retryBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            startGame();
+        });
+
+        // Custom Photo Upload Listener for Founders Image
+        uploadPhoto.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    foundersPhoto.src = event.target.result;
+                    foundersPhoto.classList.remove('hidden');
+                    foundersIllustration.classList.add('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Initial Draw to setup canvas background before start
+        drawBackground();
+        quail.reset();
+        quail.draw();
+    </script>
+</body>
+</html>
